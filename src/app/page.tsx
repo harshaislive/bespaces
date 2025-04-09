@@ -1,103 +1,398 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import createSupabaseClient from '@/lib/supabase/supabase-client';
+import { Header } from '@/components/layout/Header';
+import { CardGrid } from '@/components/cards/CardGrid';
+import { Card as CardType, User, Category } from '@/types';
+import { AddCardModal } from '@/components/cards/AddCardModal';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
+import { BeSpaceCard } from '@/components/SpaceCard';
+import { cn } from '@/lib/utils';
+import { useInView } from 'react-intersection-observer';
+
+// Define categories including 'All'
+const categories: Category[] = ['All', 'Tools', 'Videos', 'Documents', 'Knowledge'];
+const ITEMS_PER_PAGE = 12; // Number of items to load per scroll
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
+  // === State Hooks ===
+  const [user, setUser] = useState<User | null>(null);
+  const [allSpaces, setAllSpaces] = useState<CardType[]>([]); 
+  const [isLoading, setIsLoading] = useState(true);
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<Category>('All'); 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [displayedItemsCount, setDisplayedItemsCount] = useState(ITEMS_PER_PAGE);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // === Refs & Observers ===
+  const { ref, inView } = useInView({
+    threshold: 0,
+    triggerOnce: false, 
+  });
+
+  // === Callbacks ===
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setSelectedCategory('All');
+  }, []);
+
+  const handleAddSpace = async (
+    spaceData: Omit<CardType, 'id' | 'created_at' | 'likes' | 'creator_id' | 'creator_name'>
+  ) => {
+    if (!user || !supabase) return;
+    
+    try {
+      const { data: columnData } = await supabase
+        .from('cards')
+        .select('creator_name', { head: true, count: 'exact' });
+      
+      const hasCreatorNameField = !!columnData;
+      
+      const { error } = await supabase
+        .from('cards')
+        .insert({
+          ...spaceData,
+          creator_id: user.id,
+          ...(hasCreatorNameField ? { creator_name: user.name || user.email } : {})
+        });
+
+      if (error) throw error;
+      
+    } catch (error) {
+      console.error('Error adding space:', error);
+    }
+  };
+  
+  const handleLikeSpace = async (id: string) => {
+    if (!supabase) return;
+
+    try {
+      const { data: currentCard, error: fetchError } = await supabase
+        .from('cards')
+        .select('likes')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const newLikes = (currentCard?.likes || 0) + 1;
+      const { error: updateError } = await supabase
+        .from('cards')
+        .update({ likes: newLikes })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+    } catch (error) {
+      console.error('Error liking space:', error);
+    }
+  };
+
+  // === Effects ===
+  // Load more items effect
+  useEffect(() => {
+    if (inView && !isLoading) {
+      setDisplayedItemsCount(prevCount => prevCount + ITEMS_PER_PAGE);
+    }
+  }, [inView, isLoading]);
+
+  // Reset displayed items on category or search change effect
+  useEffect(() => {
+    setDisplayedItemsCount(ITEMS_PER_PAGE);
+  }, [selectedCategory, searchTerm]);
+  
+  // Initialize Supabase client effect
+  useEffect(() => {
+    setSupabase(createSupabaseClient());
+  }, []);
+  
+  // Auth check effect
+  useEffect(() => {
+    if (!supabase) return;
+    let isMounted = true;
+    setIsAuthChecking(true);
+    const checkUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (isMounted) {
+            if (session?.user) {
+            setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.email?.split('@')[0] || '',
+            });
+            } else {
+            router.replace('/login');
+            }
+        }
+      } catch(error) {
+          console.error("Auth check failed:", error)
+          if (isMounted) router.replace('/login');
+      } finally {
+        if (isMounted) {
+            setIsAuthChecking(false);
+        }
+      }
+    };
+    checkUser();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (isMounted) {
+            if (session?.user) {
+                setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.email?.split('@')[0] || '',
+                });
+            } else {
+                setUser(null);
+            }
+        }
+    });
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
+  }, [supabase, router]);
+
+  // Fetch spaces & Subscribe effect
+  useEffect(() => {
+    if (!supabase || !user) return;
+    let isMounted = true;
+    const fetchSpaces = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('cards')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!isMounted) return;
+
+        if (error) {
+             console.error('Supabase error:', error.message, error.details, error.hint);
+             throw error;
+        }
+        
+        const processedData = data?.map(card => ({
+          ...card,
+          creator_name: card.creator_name || 'Unknown User'
+        })) || [];
+        
+        setAllSpaces(processedData);
+      } catch (error) {
+        console.error('Error fetching spaces:', error instanceof Error ? error.message : error);
+      } finally {
+        if (isMounted) {
+            setIsLoading(false);
+        }
+      }
+    };
+
+    fetchSpaces();
+
+    const channel = supabase
+      .channel('cards_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, (payload) => {
+          if (!isMounted) return;
+           if (payload.eventType === 'INSERT') {
+            const newCard = {
+                ...payload.new as CardType,
+                creator_name: (payload.new as CardType).creator_name || 'Unknown User'
+            };
+            setAllSpaces(prev => [newCard, ...prev.filter(c => c.id !== newCard.id)]);
+            } else if (payload.eventType === 'UPDATE') {
+            setAllSpaces(prev => prev.map((card: CardType) => 
+                card.id === payload.new.id ? {
+                ...payload.new as CardType,
+                creator_name: (payload.new as CardType).creator_name || 'Unknown User'
+                } : card
+            ));
+            } else if (payload.eventType === 'DELETE') {
+                 setAllSpaces(prev => prev.filter(card => card.id !== payload.old.id));
+            }
+      })
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      channel?.unsubscribe();
+    };
+  }, [supabase, user]); 
+  
+  // === Memoized Derived State ===
+  const filteredSpaces = useMemo(() => {
+    let result = allSpaces;
+    if (selectedCategory !== 'All') {
+      result = result.filter((card: CardType) => card.category === selectedCategory);
+    }
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      result = result.filter((card: CardType) => 
+        card.title.toLowerCase().includes(lowerCaseSearchTerm) ||
+        card.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+        (card.tag && card.tag.toLowerCase().includes(lowerCaseSearchTerm)) ||
+        card.creator_name.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+    }
+    return result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [allSpaces, selectedCategory, searchTerm]);
+
+  const displayedSpaces = filteredSpaces.slice(0, displayedItemsCount);
+  const featuredSpaces = useMemo(() => allSpaces.filter((card: CardType) => card.featured), [allSpaces]);
+
+  // === Conditional Renders ===
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fdfbf7]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#344736] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#344736] text-sm">Authenticating...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fdfbf7]">
+        <div className="text-center">
+          <p className="text-[#344736] text-sm">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // === Main Return ===
+  return (
+    <div className="min-h-screen flex flex-col bg-[#fdfbf7]">
+      <Header user={user} />
+      
+      <div className="flex-1 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          
+          {/* Search and Filter Controls */}
+          <div className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            {/* Search Input */}
+            <div className="md:col-span-1">
+              <label htmlFor="search" className="block text-xs font-medium text-[#51514d] mb-1">Search Resources</label>
+              <input
+                id="search"
+                type="text"
+                placeholder="Search by title, description, tag..."
+                onChange={handleSearchChange}
+                className="w-full px-4 py-2 rounded-md border border-[#e7e4df] bg-[#fdfbf7] text-[#342e29] text-sm focus:ring-1 focus:ring-[#344736] focus:border-[#344736] focus:outline-none placeholder-[#51514d]/50"
+              />
+            </div>
+            
+            {/* Category Filter Tabs */}
+            <div className="md:col-span-2 border-b border-[#e7e4df] pb-2 md:border-none md:pb-0">
+              <div className="flex flex-wrap items-center gap-2 justify-start md:justify-end">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-md text-sm transition-colors duration-200',
+                      selectedCategory === category
+                        ? 'bg-[#344736] text-[#fdfbf7] shadow-sm'
+                        : 'text-[#342e29]/70 hover:bg-[#e7e4df] hover:text-[#342e29]'
+                    )}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Featured Section */}
+          {featuredSpaces.length > 0 && selectedCategory === 'All' && searchTerm === '' && (
+            <div className="mb-16">
+              <h2 className="text-xl font-serif font-bold mb-6 text-[#344736] flex items-center">
+                <span className="mr-2">✨</span> Featured Resources
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredSpaces.map((card: CardType) => (
+                  <BeSpaceCard
+                    key={card.id}
+                    title={card.title}
+                    description={card.description}
+                    author={{ name: card.creator_name }}
+                    likes={card.likes}
+                    category={card.category}
+                    link={card.link}
+                    tag={card.tag}
+                    onLike={() => handleLikeSpace(card.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Resources Section */}
+          <div>
+             <h2 className="text-xl font-serif font-bold mb-6 text-[#344736] flex items-center">
+              <span className="mr-2">
+                {searchTerm ? '🔍' : (selectedCategory === 'All' ? '🌿' : '📂')}
+              </span> 
+              {searchTerm 
+                ? `Search Results for "${searchTerm}"` 
+                : (selectedCategory === 'All' ? 'All Resources' : `${selectedCategory} Resources`)}
+            </h2>
+
+            {isLoading && displayedSpaces.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-8 h-8 border-4 border-[#e7e4df] border-t-[#344736] rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-[#51514d]">Loading Resources...</p>
+              </div>
+            ) : filteredSpaces.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-[#342e29] text-lg mb-2">No resources found.</p>
+                <p className="text-sm text-[#51514d]">
+                  {searchTerm 
+                    ? `Try adjusting your search term or category.`
+                    : `There are no resources in the "${selectedCategory}" category yet.`}
+                </p>
+              </div>
+            ) : (
+              <CardGrid
+                cards={displayedSpaces} 
+                onLike={handleLikeSpace}
+                isLoading={false} 
+              />
+            )}
+            
+            {!isLoading && filteredSpaces.length > displayedItemsCount && (
+              <div ref={ref} className="text-center py-8">
+                 <div className="w-8 h-8 border-4 border-[#e7e4df] border-t-[#344736] rounded-full animate-spin mx-auto"></div>
+              </div>
+            )}
+            
+            {!isLoading && filteredSpaces.length > 0 && filteredSpaces.length <= displayedItemsCount && displayedItemsCount > ITEMS_PER_PAGE && (
+              <div className="text-center py-8">
+                <p className="text-sm text-[#51514d]">You&apos;ve reached the end!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <footer className="py-6 bg-[#e7e4df] border-t border-[#d1cec9] mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-xs text-[#51514d]">© {new Date().getFullYear()} Beforest. All rights reserved.</p>
+        </div>
       </footer>
+
+      <AddCardModal
+        isOpen={false}
+        onClose={() => {}}
+        onSubmit={handleAddSpace} 
+        isLoading={false}
+      />
     </div>
   );
 }
