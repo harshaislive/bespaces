@@ -27,7 +27,7 @@ export function Header({ user }: HeaderProps) {
   
   return (
     <header className="w-full border-b border-[#e7e4df] bg-[#fdfbf7] shadow-sm">
-      <div className="w-full bg-gradient-to-r from-[#344736]/90 via-[#7d5a38]/90 to-[#86312b]/90 py-2">
+      <div className="w-full gradient-header py-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-center">
           <span className="text-[#fdfbf7] text-sm font-medium tracking-wider">Internal Knowledge Portal</span>
         </div>

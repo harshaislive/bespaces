@@ -3,15 +3,12 @@ import { cn } from '@/lib/utils';
 import { Card as CardType } from '@/types'; // Remove unused Category import
 import Image from 'next/image'; // Import Image
 
-// Function to determine gradient based on category (assuming this exists elsewhere or should be here)
-const getCategoryGradient = (category?: string): 'earth' | 'forest' | 'ocean' | 'sunset' => {
-  switch (category?.toLowerCase()) {
-    case 'tools': return 'ocean';
-    case 'videos': return 'sunset';
-    case 'documents': return 'forest';
-    case 'knowledge': return 'earth';
-    default: return 'earth'; // Default gradient
-  }
+// Function to get gradient number based on card ID
+const getGradientNumber = (id: string): number => {
+  // Use the last character of the ID to determine gradient
+  const lastChar = id.slice(-1);
+  const charCode = lastChar.charCodeAt(0);
+  return (charCode % 10) + 1; // Returns 1-10
 };
 
 export type BeSpaceCardProps = {
@@ -40,7 +37,7 @@ export function BeSpaceCard({
   className,
 }: BeSpaceCardProps) {
   // Destructure needed properties from the card object
-  const { id, title, description, creator_name, likes, category, link, tag, creator_avatar } = card;
+  const { id, title, description, creator_name, likes, link, tag, creator_avatar } = card;
   
   // Create author object, potentially including avatar
   const author = {
@@ -48,27 +45,8 @@ export function BeSpaceCard({
     avatar: creator_avatar, // Use avatar from card if available
   };
 
-  const gradient = getCategoryGradient(category);
-  const gradientClass = {
-    earth: 'card-gradient-earth',
-    forest: 'card-gradient-forest',
-    ocean: 'card-gradient-ocean',
-    sunset: 'card-gradient-sunset',
-  }[gradient];
-
-  const hoverGradientClass = {
-    earth: 'hover:card-gradient-earth-hover',
-    forest: 'hover:card-gradient-forest-hover',
-    ocean: 'hover:card-gradient-ocean-hover',
-    sunset: 'hover:card-gradient-sunset-hover',
-  }[gradient];
-  
-  const accentBorderColor = {
-    earth: '#ffc083',
-    forest: '#b8dc99',
-    ocean: '#b0ddf1',
-    sunset: '#ff774a',
-  }[gradient];
+  const gradientNumber = getGradientNumber(id);
+  const gradientClass = `card-gradient-${gradientNumber}`;
 
   const handleClick = () => {
     // Use the passed-in handler
@@ -121,7 +99,6 @@ export function BeSpaceCard({
       className={cn(
         'space-card group relative overflow-hidden rounded-lg p-4 shadow-md transition-all duration-300 hover:shadow-lg',
         gradientClass,
-        hoverGradientClass,
         link && 'cursor-pointer',
         className
       )}
@@ -173,28 +150,6 @@ export function BeSpaceCard({
         </div>
       </div>
 
-      {/* Animated accent border on hover */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0 rounded-lg border-2 border-transparent"
-        style={{ 
-          borderColor: 'transparent',
-          boxShadow: `0 0 0 2px transparent`,
-          transition: 'all 0.5s ease'
-        }}
-        data-accent-color={accentBorderColor}
-        onMouseEnter={(e) => {
-          const target = e.currentTarget;
-          const accentColor = target.getAttribute('data-accent-color') || '#ffc083';
-          target.style.borderColor = accentColor;
-          target.style.boxShadow = `0 0 15px 0 ${accentColor}40`;
-        }}
-        onMouseLeave={(e) => {
-          const target = e.currentTarget;
-          target.style.borderColor = 'transparent';
-          target.style.boxShadow = '0 0 0 2px transparent';
-        }}
-      ></div>
-      
       {/* Animated color overlay for hover effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
     </div>

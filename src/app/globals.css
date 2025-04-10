@@ -33,6 +33,20 @@
     --ring: 125 18% 24%;
     
     --radius: 0.5rem;
+
+    /* Brand Colors */
+    --dark-earth: #342e29;
+    --rich-red: #86312b;
+    --forest-green: #344736;
+    --deep-blue: #002140;
+    --dark-brown: #4b3c35;
+    --burnt-red: #9e3430;
+    --olive-green: #415c43;
+    --dark-blue: #00385e;
+    --warm-yellow: #ffc083;
+    --coral-orange: #ff774a;
+    --soft-green: #b8dc99;
+    --light-blue: #b0ddf1;
   }
 }
 
@@ -43,4 +57,92 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Header Gradient */
+.gradient-header {
+  background: linear-gradient(to right, var(--forest-green), var(--dark-brown), var(--rich-red));
+  opacity: 0.9;
+}
+
+/* Card Gradients */
+.card-gradient-1 {
+  background: linear-gradient(135deg, var(--forest-green), var(--soft-green));
+}
+
+.card-gradient-2 {
+  background: linear-gradient(135deg, var(--rich-red), var(--coral-orange));
+}
+
+.card-gradient-3 {
+  background: linear-gradient(135deg, var(--dark-earth), var(--warm-yellow));
+}
+
+.card-gradient-4 {
+  background: linear-gradient(135deg, var(--deep-blue), var(--light-blue));
+}
+
+.card-gradient-5 {
+  background: linear-gradient(135deg, var(--olive-green), var(--soft-green));
+}
+
+.card-gradient-6 {
+  background: linear-gradient(135deg, var(--burnt-red), var(--coral-orange));
+}
+
+.card-gradient-7 {
+  background: linear-gradient(135deg, var(--dark-brown), var(--warm-yellow));
+}
+
+.card-gradient-8 {
+  background: linear-gradient(135deg, var(--dark-blue), var(--light-blue));
+}
+
+.card-gradient-9 {
+  background: linear-gradient(135deg, var(--forest-green), var(--warm-yellow));
+}
+
+.card-gradient-10 {
+  background: linear-gradient(135deg, var(--rich-red), var(--warm-yellow));
+}
+
+/* Hover Effects */
+.card-gradient-1:hover {
+  background: linear-gradient(135deg, var(--soft-green), var(--forest-green));
+}
+
+.card-gradient-2:hover {
+  background: linear-gradient(135deg, var(--coral-orange), var(--rich-red));
+}
+
+.card-gradient-3:hover {
+  background: linear-gradient(135deg, var(--warm-yellow), var(--dark-earth));
+}
+
+.card-gradient-4:hover {
+  background: linear-gradient(135deg, var(--light-blue), var(--deep-blue));
+}
+
+.card-gradient-5:hover {
+  background: linear-gradient(135deg, var(--soft-green), var(--olive-green));
+}
+
+.card-gradient-6:hover {
+  background: linear-gradient(135deg, var(--coral-orange), var(--burnt-red));
+}
+
+.card-gradient-7:hover {
+  background: linear-gradient(135deg, var(--warm-yellow), var(--dark-brown));
+}
+
+.card-gradient-8:hover {
+  background: linear-gradient(135deg, var(--light-blue), var(--dark-blue));
+}
+
+.card-gradient-9:hover {
+  background: linear-gradient(135deg, var(--warm-yellow), var(--forest-green));
+}
+
+.card-gradient-10:hover {
+  background: linear-gradient(135deg, var(--warm-yellow), var(--rich-red));
 }
