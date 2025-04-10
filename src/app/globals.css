@@ -65,84 +65,158 @@
   opacity: 0.9;
 }
 
-/* Card Gradients */
+/* Card Base Styles */
+.space-card {
+  position: relative;
+  isolation: isolate;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+  transform-style: preserve-3d;
+  will-change: transform, box-shadow;
+}
+
+.space-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transition: opacity 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+  opacity: 0;
+  background: radial-gradient(
+    800px circle at var(--x) var(--y),
+    rgba(253, 251, 247, 0.06),
+    transparent 40%
+  );
+}
+
+.space-card:hover::before {
+  opacity: 1;
+}
+
+/* Card Gradients with Viscous Animation */
 .card-gradient-1 {
-  background: linear-gradient(135deg, var(--forest-green), var(--soft-green));
+  background: linear-gradient(135deg, 
+    var(--forest-green) 0%,
+    color-mix(in srgb, var(--forest-green) 70%, var(--soft-green)) 50%,
+    var(--soft-green) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-2 {
-  background: linear-gradient(135deg, var(--rich-red), var(--coral-orange));
+  background: linear-gradient(135deg,
+    var(--rich-red) 0%,
+    color-mix(in srgb, var(--rich-red) 70%, var(--coral-orange)) 50%,
+    var(--coral-orange) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-3 {
-  background: linear-gradient(135deg, var(--dark-earth), var(--warm-yellow));
+  background: linear-gradient(135deg,
+    var(--dark-earth) 0%,
+    color-mix(in srgb, var(--dark-earth) 70%, var(--warm-yellow)) 50%,
+    var(--warm-yellow) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-4 {
-  background: linear-gradient(135deg, var(--deep-blue), var(--light-blue));
+  background: linear-gradient(135deg,
+    var(--deep-blue) 0%,
+    color-mix(in srgb, var(--deep-blue) 70%, var(--light-blue)) 50%,
+    var(--light-blue) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-5 {
-  background: linear-gradient(135deg, var(--olive-green), var(--soft-green));
+  background: linear-gradient(135deg,
+    var(--olive-green) 0%,
+    color-mix(in srgb, var(--olive-green) 70%, var(--soft-green)) 50%,
+    var(--soft-green) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-6 {
-  background: linear-gradient(135deg, var(--burnt-red), var(--coral-orange));
+  background: linear-gradient(135deg,
+    var(--burnt-red) 0%,
+    color-mix(in srgb, var(--burnt-red) 70%, var(--coral-orange)) 50%,
+    var(--coral-orange) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-7 {
-  background: linear-gradient(135deg, var(--dark-brown), var(--warm-yellow));
+  background: linear-gradient(135deg,
+    var(--dark-brown) 0%,
+    color-mix(in srgb, var(--dark-brown) 70%, var(--warm-yellow)) 50%,
+    var(--warm-yellow) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-8 {
-  background: linear-gradient(135deg, var(--dark-blue), var(--light-blue));
+  background: linear-gradient(135deg,
+    var(--dark-blue) 0%,
+    color-mix(in srgb, var(--dark-blue) 70%, var(--light-blue)) 50%,
+    var(--light-blue) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-9 {
-  background: linear-gradient(135deg, var(--forest-green), var(--warm-yellow));
+  background: linear-gradient(135deg,
+    var(--forest-green) 0%,
+    color-mix(in srgb, var(--forest-green) 70%, var(--warm-yellow)) 50%,
+    var(--warm-yellow) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .card-gradient-10 {
-  background: linear-gradient(135deg, var(--rich-red), var(--warm-yellow));
+  background: linear-gradient(135deg,
+    var(--rich-red) 0%,
+    color-mix(in srgb, var(--rich-red) 70%, var(--warm-yellow)) 50%,
+    var(--warm-yellow) 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* Hover Effects */
-.card-gradient-1:hover {
-  background: linear-gradient(135deg, var(--soft-green), var(--forest-green));
-}
-
-.card-gradient-2:hover {
-  background: linear-gradient(135deg, var(--coral-orange), var(--rich-red));
-}
-
-.card-gradient-3:hover {
-  background: linear-gradient(135deg, var(--warm-yellow), var(--dark-earth));
-}
-
-.card-gradient-4:hover {
-  background: linear-gradient(135deg, var(--light-blue), var(--deep-blue));
-}
-
-.card-gradient-5:hover {
-  background: linear-gradient(135deg, var(--soft-green), var(--olive-green));
-}
-
-.card-gradient-6:hover {
-  background: linear-gradient(135deg, var(--coral-orange), var(--burnt-red));
-}
-
-.card-gradient-7:hover {
-  background: linear-gradient(135deg, var(--warm-yellow), var(--dark-brown));
-}
-
-.card-gradient-8:hover {
-  background: linear-gradient(135deg, var(--light-blue), var(--dark-blue));
-}
-
-.card-gradient-9:hover {
-  background: linear-gradient(135deg, var(--warm-yellow), var(--forest-green));
-}
-
+/* Hover Effects with Viscous Animation */
+.card-gradient-1:hover,
+.card-gradient-2:hover,
+.card-gradient-3:hover,
+.card-gradient-4:hover,
+.card-gradient-5:hover,
+.card-gradient-6:hover,
+.card-gradient-7:hover,
+.card-gradient-8:hover,
+.card-gradient-9:hover,
 .card-gradient-10:hover {
-  background: linear-gradient(135deg, var(--warm-yellow), var(--rich-red));
+  background-position: 100% 100%;
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
