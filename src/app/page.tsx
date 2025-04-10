@@ -144,22 +144,17 @@ export default function Home() {
   // New handler for card clicks (video or link)
   const handleCardClick = (card: CardType) => {
     if (card.category === 'Videos' && card.link && supabase) {
-      // Use the correct bucket name 'bespace-videos'
       const { data } = supabase.storage.from('bespace-videos').getPublicUrl(card.link);
       
       if (data?.publicUrl) {
-        setCurrentVideoUrl(data.publicUrl);
+        // Add timestamp to force video reload
+        const videoUrl = `${data.publicUrl}?t=${Date.now()}`;
+        setCurrentVideoUrl(videoUrl);
         setIsVideoModalOpen(true);
       } else {
         console.error('Could not get public URL for video:', card.link);
-        // Optionally open the raw link as a fallback or show an error
-        if (card.link) {
-          let correctedLink = card.link.trim();
-          if (!/^https?:\/\//i.test(correctedLink)) {
-            correctedLink = `https://${correctedLink}`;
-          }
-          window.open(correctedLink, '_blank');
-        }
+        // Show error message to user
+        alert('Error loading video. Please try again later.');
       }
     } else if (card.link) {
       // Default behavior: open link in new tab

@@ -1,7 +1,9 @@
-import { Heart } from 'lucide-react';
+import { Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card as CardType } from '@/types'; // Remove unused Category import
 import Image from 'next/image'; // Import Image
+import { useEffect, useState } from 'react';
+import createSupabaseClient from '@/lib/supabase/supabase-client';
 
 // Function to get gradient number based on card ID
 const getGradientNumber = (id: string): number => {
@@ -37,8 +39,19 @@ export function BeSpaceCard({
   className,
 }: BeSpaceCardProps) {
   // Destructure needed properties from the card object
-  const { id, title, description, creator_name, likes, link, tag, creator_avatar } = card;
+  const { id, title, description, creator_name, likes, link, tag, creator_avatar, category } = card;
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [supabase] = useState(() => createSupabaseClient());
   
+  useEffect(() => {
+    if (category === 'Videos' && link) {
+      const { data } = supabase.storage.from('bespace-videos').getPublicUrl(link);
+      if (data?.publicUrl) {
+        setThumbnailUrl(data.publicUrl);
+      }
+    }
+  }, [category, link, supabase]);
+
   // Create author object, potentially including avatar
   const author = {
     name: creator_name || 'Unknown User',
@@ -106,7 +119,7 @@ export function BeSpaceCard({
   return (
     <div 
       className={cn(
-        'space-card relative overflow-hidden rounded-lg p-4 shadow-md cursor-pointer',
+        'space-card relative overflow-hidden rounded-lg shadow-md cursor-pointer',
         gradientClass,
         className
       )}
@@ -114,7 +127,24 @@ export function BeSpaceCard({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="relative z-10 flex flex-col h-full">
+      {category === 'Videos' && thumbnailUrl && (
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-black/50 z-10" />
+          <video
+            src={thumbnailUrl}
+            className="w-full h-full object-cover"
+            preload="metadata"
+            muted
+            playsInline
+          />
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Play className="w-8 h-8 text-white fill-white" />
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="relative z-10 flex flex-col h-full p-4">
         <div className="flex-1">
           <div className="flex items-start justify-between mb-2">
             <h3 className="space-card-title text-[#fdfbf7] font-serif text-lg font-bold line-clamp-2">{title}</h3>

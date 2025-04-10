@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface VideoPlayerModalProps {
   isOpen: boolean;
@@ -7,7 +7,20 @@ interface VideoPlayerModalProps {
 }
 
 export function VideoPlayerModal({ isOpen, onClose, videoUrl }: VideoPlayerModalProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (isOpen && videoRef.current) {
+      videoRef.current.load(); // Reload video when modal opens
+    }
+  }, [isOpen, videoUrl]);
+
   if (!isOpen || !videoUrl) return null;
+
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.error('Video playback error:', e);
+    // You might want to show an error message to the user
+  };
 
   return (
     <div 
@@ -29,11 +42,18 @@ export function VideoPlayerModal({ isOpen, onClose, videoUrl }: VideoPlayerModal
         </div>
         <div className="p-4">
           <video 
+            ref={videoRef}
             controls 
             src={videoUrl} 
             className="w-full h-auto max-h-[70vh] rounded"
             autoPlay
+            onError={handleVideoError}
+            preload="auto"
+            controlsList="nodownload"
+            playsInline
           >
+            <source src={videoUrl} type="video/mp4" />
+            <source src={videoUrl} type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>
