@@ -154,7 +154,7 @@ export function BeSpaceCard({
   };
 
   // Heart particles configuration
-  const particles = Array.from({ length: 8 }).map((_, i) => ({
+  const particles = Array.from({ length: 8 }).map(() => ({
     x: Math.random() * 60 - 30,
     y: Math.random() * -50 - 20,
     scale: Math.random() * 0.6 + 0.4,
