@@ -14,8 +14,17 @@ const fontSerif = Lora({
 })
 
 export const metadata: Metadata = {
-  title: "BeSpaces - Beforest Internal Portal",
-  description: "Internal knowledge portal for Beforest",
+  title: "BeSpaces - Beforest Internal Knowledge Hub",
+  description: "A secure internal portal for Beforest team members to access tools, resources, videos, and shared knowledge.",
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({
