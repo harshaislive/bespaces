@@ -4,6 +4,7 @@ import { Card as CardType } from '@/types'; // Remove unused Category import
 import Image from 'next/image'; // Import Image
 import { useEffect, useState } from 'react';
 import createSupabaseClient from '@/lib/supabase/supabase-client';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Function to get gradient number based on card ID
 const getGradientNumber = (id: string): number => {
@@ -41,6 +42,7 @@ export function BeSpaceCard({
   // Destructure needed properties from the card object
   const { id, title, description, creator_name, likes, link, tag, creator_avatar, category } = card;
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [videoRef] = useState<HTMLVideoElement | null>(() => {
     if (typeof window !== 'undefined') {
       return document.createElement('video');
@@ -142,6 +144,24 @@ export function BeSpaceCard({
     `;
   };
 
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onLike) {
+      setIsLikeAnimating(true);
+      setTimeout(() => setIsLikeAnimating(false), 1000);
+      onLike(id);
+    }
+  };
+
+  // Heart particles configuration
+  const particles = Array.from({ length: 8 }).map((_, i) => ({
+    x: Math.random() * 60 - 30,
+    y: Math.random() * -50 - 20,
+    scale: Math.random() * 0.6 + 0.4,
+    rotation: Math.random() * 360,
+    delay: Math.random() * 0.2,
+  }));
+
   return (
     <div 
       className={cn(
@@ -202,16 +222,65 @@ export function BeSpaceCard({
             <span className="text-[#fdfbf7] text-xs truncate max-w-[120px]">{author.name}</span>
           </div>
           
-          <button 
-            className="flex items-center gap-1 text-[#fdfbf7] text-xs py-1 px-2 rounded-full hover:bg-[#fdfbf7]/10 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              onLike?.(id);
-            }}
-          >
-            <Heart className="w-3.5 h-3.5" />
-            <span>{likes}</span>
-          </button>
+          <div className="relative">
+            <button 
+              className="flex items-center gap-1 text-[#fdfbf7] text-xs py-1 px-2 rounded-full hover:bg-[#fdfbf7]/10 transition-colors"
+              onClick={handleLike}
+            >
+              <motion.div
+                whileTap={{ scale: 1.2 }}
+                className="text-rose-500"
+              >
+                <Heart className={cn("w-3.5 h-3.5", isLikeAnimating ? "fill-rose-500 text-rose-500" : "")} />
+              </motion.div>
+              <motion.span
+                key={likes}
+                initial={{ scale: 1.2, y: -2, opacity: 0.8 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {likes}
+              </motion.span>
+            </button>
+            
+            {/* Heart burst animation */}
+            <AnimatePresence>
+              {isLikeAnimating && (
+                <div className="absolute pointer-events-none" style={{ bottom: '100%', left: '50%' }}>
+                  {particles.map((particle, i) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ 
+                        opacity: 1,
+                        x: 0,
+                        y: 0,
+                        scale: 0,
+                        rotate: 0 
+                      }}
+                      animate={{ 
+                        opacity: 0,
+                        x: particle.x,
+                        y: particle.y,
+                        scale: particle.scale,
+                        rotate: particle.rotation
+                      }}
+                      exit={{ opacity: 0 }}
+                      transition={{ 
+                        duration: 0.8,
+                        delay: particle.delay,
+                        ease: [0.2, 0.8, 0.4, 1]
+                      }}
+                      className="absolute -translate-x-1/2"
+                    >
+                      <div className="w-2 h-2 text-rose-500 fill-rose-500">
+                        <Heart className="w-full h-full" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
