@@ -17,9 +17,11 @@ export const metadata: Metadata = {
   title: "BeSpaces - Beforest Internal Knowledge Hub",
   description: "A secure internal portal for Beforest team members to access tools, resources, videos, and shared knowledge.",
   icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: '/favicon.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png' }
+    ],
+    apple: { url: '/favicon.png', type: 'image/png' }
   },
   robots: {
     index: false,
@@ -34,10 +36,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="icon" type="image/png" href="/favicon.png" />
-        <link rel="apple-touch-icon" href="/favicon.png" />
-      </head>
       <body
         className={cn(
           "min-h-screen bg-[#fdfbf7] font-sans antialiased",
