@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+:root {
     --background: 60 33% 99%;
     --foreground: 24 13% 18%;
     

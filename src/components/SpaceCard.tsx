@@ -41,16 +41,42 @@ export function BeSpaceCard({
   // Destructure needed properties from the card object
   const { id, title, description, creator_name, likes, link, tag, creator_avatar, category } = card;
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [videoRef] = useState<HTMLVideoElement | null>(() => {
+    if (typeof window !== 'undefined') {
+      return document.createElement('video');
+    }
+    return null;
+  });
   const [supabase] = useState(() => createSupabaseClient());
   
   useEffect(() => {
     if (category === 'Videos' && link) {
       const { data } = supabase.storage.from('bespace-videos').getPublicUrl(link);
       if (data?.publicUrl) {
-        setThumbnailUrl(data.publicUrl);
+        // Create a video element to generate thumbnail
+        if (videoRef) {
+          videoRef.src = data.publicUrl;
+          videoRef.addEventListener('loadeddata', () => {
+            // Once video is loaded, seek to 1 second
+            videoRef.currentTime = 1;
+            videoRef.addEventListener('seeked', () => {
+              // Create a canvas to capture the frame
+              const canvas = document.createElement('canvas');
+              canvas.width = videoRef.videoWidth;
+              canvas.height = videoRef.videoHeight;
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.drawImage(videoRef, 0, 0, canvas.width, canvas.height);
+                // Convert canvas to data URL for thumbnail
+                const thumbnailDataUrl = canvas.toDataURL('image/jpeg');
+                setThumbnailUrl(thumbnailDataUrl);
+              }
+            }, { once: true });
+          }, { once: true });
+        }
       }
     }
-  }, [category, link, supabase]);
+  }, [category, link, supabase, videoRef]);
 
   // Create author object, potentially including avatar
   const author = {
@@ -119,7 +145,7 @@ export function BeSpaceCard({
   return (
     <div 
       className={cn(
-        'space-card relative overflow-hidden rounded-lg shadow-md cursor-pointer',
+        'space-card relative overflow-hidden rounded-lg shadow-md cursor-pointer group',
         gradientClass,
         className
       )}
@@ -127,18 +153,19 @@ export function BeSpaceCard({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {category === 'Videos' && thumbnailUrl && (
+      {category === 'Videos' && (
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-black/50 z-10" />
-          <video
-            src={thumbnailUrl}
-            className="w-full h-full object-cover"
-            preload="metadata"
-            muted
-            playsInline
-          />
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50 z-10" />
+          {thumbnailUrl ? (
+            <div 
+              className="w-full h-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${thumbnailUrl})` }}
+            />
+          ) : (
+            <div className="w-full h-full bg-black/20" />
+          )}
+          <div className="absolute inset-0 flex items-center justify-center z-20 opacity-90 group-hover:opacity-100 transition-opacity">
+            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center transform group-hover:scale-110 transition-transform">
               <Play className="w-8 h-8 text-white fill-white" />
             </div>
           </div>

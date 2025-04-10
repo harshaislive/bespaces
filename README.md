@@ -1,112 +1,82 @@
-# Employee Access Portal
+# BeSpaces - Beforest Knowledge Hub
 
-A beautiful access portal with magic link login, card-based resource browsing, and modern UI/UX.
+BeSpaces is a modern, user-friendly platform designed to help the Beforest community share and discover valuable resources. Think of it as your digital library where you can find and share tools, videos, documents, and knowledge that benefit the Beforest ecosystem.
 
-## Features
+## 🌟 Features
 
-- 🔑 Magic link login via Supabase authentication
-- 🏠 Welcoming top section with user greeting
-- 🔲 Cards with links, categories, tags, and interactive UI
-- 🔍 Advanced filtering, search, and sorting
-- ➕ Add new cards with live preview
-- 🎨 Modern, responsive, and polished UI
+### Resource Sharing
+- **Multiple Content Types**: Share various types of content:
+  - 🎥 Videos (upload your own videos up to 100MB)
+  - 🔧 Tools and utilities
+  - 📄 Documents and guides
+  - 💡 Knowledge articles and insights
 
-## Tech Stack
+### Beautiful Interface
+- **Dynamic Cards**: Each resource is displayed as a beautiful card with:
+  - Eye-catching gradient backgrounds that rotate based on content
+  - Video thumbnails with play button overlays
+  - Easy-to-read descriptions
+  - Quick access to creator information
 
-- **Next.js**: App Router for frontend and API
-- **Supabase**: Authentication and database
-- **TailwindCSS**: Utility-first styling
-- **shadcn/ui**: UI component library
-- **Framer Motion**: Animations
-- **React Hook Form**: Form handling
-- **TypeScript**: Type safety
+### Smart Organization
+- **Categories**: Resources are organized into clear categories:
+  - Videos
+  - Tools
+  - Documents
+  - Knowledge
 
-## Getting Started
+### User Features
+- **Easy Upload**: Simple interface to upload and share resources
+- **Video Support**: Built-in video player for seamless playback
+- **Like System**: Show appreciation for helpful resources
+- **Search**: Quickly find what you need
+- **Tags**: Additional organization through custom tags
 
-### Prerequisites
+## 🚀 Getting Started
 
-- Node.js 18+ 
-- npm/yarn
-- Supabase account
+1. **Login**: Use your authorized credentials to access the platform
+2. **Browse**: Explore resources by:
+   - Scrolling through the main feed
+   - Filtering by category
+   - Using the search function
+   - Looking up specific tags
 
-### Setup
+3. **Share Resources**: Click the "+" button to add new content:
+   - Fill in the title and description
+   - Choose a category
+   - Add relevant tags
+   - Upload files or add links
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/employee-portal.git
-   cd employee-portal
-   ```
+## 💡 Contributing
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+Have something valuable to share? Here's how:
 
-3. Create a Supabase project and get the API keys
+1. **For Quick Shares**: 
+   - Email your resource to bi@beforest.co
+   - Include a brief description
+   - Explain how it helps the Beforest community
 
-4. Create a `.env.local` file at the root of your project:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
+2. **Direct Upload**:
+   - Log into BeSpaces
+   - Click the upload button
+   - Fill in the details
+   - Share your resource
 
-5. Run the development server:
-   ```bash
-   npm run dev
-   ```
+## 🎯 Purpose
 
-6. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+BeSpaces serves as a central hub for:
+- Sharing knowledge and expertise
+- Discovering useful tools and resources
+- Building a stronger Beforest community
+- Making information easily accessible
 
-## Supabase Setup
+## 🔒 Security
 
-1. Create a new Supabase project
-2. Enable Email Auth with magic links in Authentication > Email
-3. Create the following table in the Database:
+- Secure authentication system
+- Protected video uploads
+- Safe storage of resources
+- Controlled access to sensitive information
 
-```sql
-CREATE TABLE cards (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  link TEXT NOT NULL,
-  category TEXT NOT NULL,
-  tag TEXT,
-  creator_id UUID REFERENCES auth.users NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  likes INT DEFAULT 0
-);
+---
 
--- Set up Row Level Security
-ALTER TABLE cards ENABLE ROW LEVEL SECURITY;
-
--- Everyone can view all cards
-CREATE POLICY "Anyone can view cards" 
-ON cards FOR SELECT 
-USING (true);
-
--- Only authenticated users can insert their own cards
-CREATE POLICY "Authenticated users can insert their own cards" 
-ON cards FOR INSERT 
-TO authenticated 
-WITH CHECK (auth.uid() = creator_id);
-
--- Only card creators can update their cards
-CREATE POLICY "Users can update their own cards" 
-ON cards FOR UPDATE 
-TO authenticated 
-USING (auth.uid() = creator_id);
-
--- Only card creators can delete their cards
-CREATE POLICY "Users can delete their own cards" 
-ON cards FOR DELETE 
-TO authenticated 
-USING (auth.uid() = creator_id);
-```
-
-## Deployment
-
-This project can be deployed with Vercel, Netlify, or any other Next.js compatible hosting.
-
-## License
-
-This project is licensed under the MIT License.
+Built with ❤️ for the Beforest community
