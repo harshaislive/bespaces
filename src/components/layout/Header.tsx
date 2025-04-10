@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import createSupabaseClient from '@/lib/supabase/supabase-client';
 import { useRouter } from 'next/navigation';
 import { SupabaseClient } from '@supabase/supabase-js';
+import Image from 'next/image';
 
 interface HeaderProps {
   user?: User | null;
@@ -35,12 +36,13 @@ export function Header({ user }: HeaderProps) {
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-4 py-4 px-4">
         <div className="flex items-center justify-center gap-4">
           <Link href="/" className="flex items-center">
-            <img 
+            <Image 
               src="/23-Beforest-Black-with-Tagline.png" 
               alt="Beforest" 
-              className="h-10 sm:h-12"
+              width={192}
+              height={48}
+              className="h-10 sm:h-12 w-auto"
             />
-            {/* TODO: Replace with Next.js Image component for better performance */}
           </Link>
           <div className="h-8 w-px bg-[#e7e4df]"></div>
           <Link href="/" className="flex items-center">

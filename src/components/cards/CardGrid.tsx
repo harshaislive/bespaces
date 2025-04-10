@@ -26,17 +26,8 @@ export function CardGrid({ cards, onLike, isLoading = false, onCardClick }: Card
       {cards.map((card) => (
         <BeSpaceCard
           key={card.id}
-          title={card.title}
-          description={card.description}
-          author={{
-            name: card.creator_name || 'Unknown User',
-          }}
-          likes={card.likes}
-          category={card.category}
-          link={card.link}
-          tag={card.tag}
-          onLike={() => onLike(card.id)}
           card={card}
+          onLike={() => onLike(card.id)}
           onCardClick={onCardClick}
         />
       ))}

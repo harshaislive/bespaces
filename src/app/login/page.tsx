@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import Image from 'next/image';
 
 // Allowed email domains
 const ALLOWED_DOMAINS = ['beforest.co', 'bewild.life'];
@@ -106,10 +107,12 @@ export default function LoginPage() {
         >
           <div className="flex flex-col items-center justify-center gap-2 mb-6">
             <span className="text-2xl font-serif font-bold text-[#344736] tracking-tight">BeSpaces</span>
-            <img
+            <Image
               src="/23-Beforest-Black-with-Tagline.png"
               alt="Beforest"
-              className="h-10"
+              width={160}
+              height={40}
+              className="h-10 w-auto"
             />
           </div>
           

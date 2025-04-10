@@ -31,7 +31,7 @@ export function AddCardModal({ isOpen, onClose, onSubmit, isLoading = false }: A
     }
   });
   
-  const watchedCategory = watch('category');
+  const watchedCategory: Category = watch('category');
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -100,11 +100,11 @@ export function AddCardModal({ isOpen, onClose, onSubmit, isLoading = false }: A
                           <label className="block text-sm font-medium mb-1">Link</label>
                           <input
                             {...register('link', { 
-                              required: watchedCategory !== 'Videos' ? 'Link is required' : false,
-                              pattern: {
+                              required: 'Link is required', 
+                              pattern: { 
                                 value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
                                 message: 'Please enter a valid URL'
-                              }
+                              } 
                             })}
                             className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none"
                             placeholder="https://example.com"
@@ -117,9 +117,8 @@ export function AddCardModal({ isOpen, onClose, onSubmit, isLoading = false }: A
                           <input
                             type="file"
                             {...register('videoFile', {
-                              required: watchedCategory === 'Videos' ? 'Video file is required' : false,
+                              required: 'Video file is required',
                               validate: (files) => {
-                                if (watchedCategory !== 'Videos') return true;
                                 if (!files || files.length === 0) return 'Video file is required';
                                 const file = files[0];
                                 if (file.size > 100 * 1024 * 1024) {

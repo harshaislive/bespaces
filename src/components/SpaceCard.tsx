@@ -1,6 +1,7 @@
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card as CardType } from '@/types'; // Remove unused Category import
+import Image from 'next/image'; // Import Image
 
 // Function to determine gradient based on category (assuming this exists elsewhere or should be here)
 const getCategoryGradient = (category?: string): 'earth' | 'forest' | 'ocean' | 'sunset' => {
@@ -144,12 +145,13 @@ export function BeSpaceCard({
         <div className="space-card-meta flex items-center justify-between mt-4 pt-3 border-t border-[#fdfbf7]/20">
           <div className="flex items-center gap-2">
             {author.avatar ? (
-              <img 
+              <Image 
                 src={author.avatar} 
                 alt={author.name}
+                width={24}
+                height={24}
                 className="w-6 h-6 rounded-full border border-[#fdfbf7]/40"
               />
-              // TODO: Replace with Next.js Image component for better performance
             ) : (
               <div className="w-6 h-6 rounded-full bg-[#fdfbf7]/20 flex items-center justify-center text-[#fdfbf7] text-xs">
                 {author.name.charAt(0).toUpperCase()}
