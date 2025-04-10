@@ -14,13 +14,14 @@ export default function UploadCard() {
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     link: '',
-    category: 'Tools' as Category,
+    category: 'Tools' as Category, // Default to Tools instead of Videos
     tag: '',
     featured: false
   });
@@ -65,6 +66,27 @@ export default function UploadCard() {
     setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Validate file size (100MB limit)
+      if (file.size > 100 * 1024 * 1024) {
+        setMessage({ text: 'File size should not exceed 100MB', type: 'error' });
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('video/')) {
+        setMessage({ text: 'Please select a valid video file', type: 'error' });
+        return;
+      }
+
+      setVideoFile(file);
+      setMessage(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -72,13 +94,36 @@ export default function UploadCard() {
       setMessage({ text: 'You must be logged in to upload.', type: 'error' });
       return;
     }
+
+    if (formData.category === 'Videos' && !videoFile) {
+      setMessage({ text: 'Please select a video file to upload', type: 'error' });
+      return;
+    }
     
     setIsSubmitting(true);
     setMessage(null);
     
     try {
+      let finalLink = formData.link;
+
+      // Handle video upload if category is Videos
+      if (formData.category === 'Videos' && videoFile) {
+        const sanitizedFileName = videoFile.name.replace(/[^a-zA-Z0-9.]+/g, '_');
+        const filePath = `${user.id}/${Date.now()}-${sanitizedFileName}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('bespace-videos')
+          .upload(filePath, videoFile);
+
+        if (uploadError) throw uploadError;
+        if (!uploadData?.path) throw new Error('Upload succeeded but no path returned');
+        
+        finalLink = uploadData.path;
+      }
+
       const { error } = await supabase.from('cards').insert({
         ...formData,
+        link: finalLink,
         creator_id: user.id,
         creator_name: user.name || user.email,
       });
@@ -94,6 +139,10 @@ export default function UploadCard() {
         tag: '',
         featured: false
       });
+      setVideoFile(null);
+      
+      // Optional: Redirect to home after successful upload
+      router.push('/');
     } catch (error) {
       console.error('Upload error:', error);
       setMessage({ 
@@ -134,6 +183,26 @@ export default function UploadCard() {
           
           <div className="bg-white rounded-lg border border-[#e7e4df] p-6 shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Category - Moved to top */}
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-[#342e29] mb-1">
+                  Category <span className="text-[#86312b]">*</span>
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  required
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-md border border-[#e7e4df] bg-[#fdfbf7] text-[#342e29] text-sm focus:ring-1 focus:ring-[#344736] focus:border-[#344736] focus:outline-none"
+                >
+                  <option value="Tools">Tools</option>
+                  <option value="Videos">Videos</option>
+                  <option value="Documents">Documents</option>
+                  <option value="Knowledge">Knowledge</option>
+                </select>
+              </div>
+
               {/* Title */}
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-[#342e29] mb-1">
@@ -166,58 +235,53 @@ export default function UploadCard() {
                 />
               </div>
               
-              {/* Link */}
-              <div>
-                <label htmlFor="link" className="block text-sm font-medium text-[#342e29] mb-1">
-                  Link <span className="text-[#86312b]">*</span>
-                </label>
-                <input
-                  id="link"
-                  name="link"
-                  type="url"
-                  required
-                  value={formData.link}
-                  onChange={handleChange}
-                  placeholder="https://example.com"
-                  className="w-full px-4 py-2 rounded-md border border-[#e7e4df] bg-[#fdfbf7] text-[#342e29] text-sm focus:ring-1 focus:ring-[#344736] focus:border-[#344736] focus:outline-none"
-                />
-              </div>
-              
-              {/* Category & Tag */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Resource Link or Video Upload based on category */}
+              {formData.category === 'Videos' ? (
                 <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-[#342e29] mb-1">
-                    Category <span className="text-[#86312b]">*</span>
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    required
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 rounded-md border border-[#e7e4df] bg-[#fdfbf7] text-[#342e29] text-sm focus:ring-1 focus:ring-[#344736] focus:border-[#344736] focus:outline-none"
-                  >
-                    <option value="Tools">Tools</option>
-                    <option value="Videos">Videos</option>
-                    <option value="Documents">Documents</option>
-                    <option value="Knowledge">Knowledge</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="tag" className="block text-sm font-medium text-[#342e29] mb-1">
-                    Tag (Optional)
+                  <label htmlFor="video" className="block text-sm font-medium text-[#342e29] mb-1">
+                    Video File <span className="text-[#86312b]">*</span>
                   </label>
                   <input
-                    id="tag"
-                    name="tag"
-                    type="text"
-                    value={formData.tag}
+                    id="video"
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileChange}
+                    className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#344736]/10 file:text-[#344736] hover:file:bg-[#344736]/20"
+                  />
+                  <p className="text-xs text-[#51514d] mt-1">Maximum file size: 100MB. Supported formats: MP4, WebM, etc.</p>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="link" className="block text-sm font-medium text-[#342e29] mb-1">
+                    Link <span className="text-[#86312b]">*</span>
+                  </label>
+                  <input
+                    id="link"
+                    name="link"
+                    type="url"
+                    required
+                    value={formData.link}
                     onChange={handleChange}
-                    placeholder="e.g. Poomaale, New, etc."
+                    placeholder="https://example.com"
                     className="w-full px-4 py-2 rounded-md border border-[#e7e4df] bg-[#fdfbf7] text-[#342e29] text-sm focus:ring-1 focus:ring-[#344736] focus:border-[#344736] focus:outline-none"
                   />
                 </div>
+              )}
+              
+              {/* Tag */}
+              <div>
+                <label htmlFor="tag" className="block text-sm font-medium text-[#342e29] mb-1">
+                  Tag (Optional)
+                </label>
+                <input
+                  id="tag"
+                  name="tag"
+                  type="text"
+                  value={formData.tag}
+                  onChange={handleChange}
+                  placeholder="e.g. Tutorial, Workshop, etc."
+                  className="w-full px-4 py-2 rounded-md border border-[#e7e4df] bg-[#fdfbf7] text-[#342e29] text-sm focus:ring-1 focus:ring-[#344736] focus:border-[#344736] focus:outline-none"
+                />
               </div>
               
               {/* Featured Toggle */}
