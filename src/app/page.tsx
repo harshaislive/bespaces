@@ -135,6 +135,11 @@ export default function Home() {
         .eq('id', id);
 
       if (updateError) throw updateError;
+      
+      // Update the UI state immediately for better user experience
+      setAllSpaces(prev => prev.map(card => 
+        card.id === id ? { ...card, likes: newLikes } : card
+      ));
 
     } catch (error) {
       console.error('Error liking space:', error);
