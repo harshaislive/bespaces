@@ -1,47 +1,52 @@
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Card as CardType } from '@/types'; // Remove unused Category import
 
-export type BeSpaceCardProps = {
-  title: string;
-  description: string;
-  author: {
-    name: string;
-    avatar?: string;
-  };
-  likes?: number;
-  category?: string;
-  link?: string;
-  tag?: string;
-  onLike?: () => void;
-  className?: string;
-};
-
-const getCategoryGradient = (category?: string) => {
+// Function to determine gradient based on category (assuming this exists elsewhere or should be here)
+const getCategoryGradient = (category?: string): 'earth' | 'forest' | 'ocean' | 'sunset' => {
   switch (category?.toLowerCase()) {
-    case 'tools':
-      return 'forest';
-    case 'videos':
-      return 'sunset';
-    case 'documents':
-      return 'earth';
-    case 'knowledge':
-      return 'ocean';
-    default:
-      return 'forest';
+    case 'tools': return 'ocean';
+    case 'videos': return 'sunset';
+    case 'documents': return 'forest';
+    case 'knowledge': return 'earth';
+    default: return 'earth'; // Default gradient
   }
 };
 
+export type BeSpaceCardProps = {
+  // Remove individual props that are now in the card object
+  // title: string;
+  // description: string;
+  // author: {
+  //   name: string;
+  //   avatar?: string; // Keep avatar if you customize it here
+  // };
+  // likes?: number;
+  // category?: string;
+  // link?: string;
+  // tag?: string;
+  card: CardType; // Pass the whole card object
+  onLike?: (id: string) => void;
+  onCardClick?: (card: CardType) => void; // Add the click handler prop
+  className?: string;
+};
+
 export function BeSpaceCard({
-  title,
-  description,
-  author,
-  likes = 0,
-  category,
-  link,
-  tag,
+  // Remove destructured props that are now in card
+  card, // Use the card object
   onLike,
+  onCardClick, // Get the click handler
   className,
 }: BeSpaceCardProps) {
+  // Destructure needed properties from the card object
+  const { id, title, description, creator_name, likes, category, link, tag, creator_avatar } = card;
+  
+  // Create author object, potentially including avatar
+  const author = {
+    name: creator_name || 'Unknown User',
+    avatar: creator_avatar, // Use avatar from card if available
+  };
+
   const gradient = getCategoryGradient(category);
   const gradientClass = {
     earth: 'card-gradient-earth',
@@ -65,7 +70,12 @@ export function BeSpaceCard({
   }[gradient];
 
   const handleClick = () => {
-    if (link) {
+    // Use the passed-in handler
+    if (onCardClick) {
+      onCardClick(card);
+    } else if (link) { 
+      // Fallback: Keep original link opening if no handler provided (optional)
+      console.warn('BeSpaceCard clicked without onCardClick handler, opening link directly.');
       let correctedLink = link.trim();
       if (!/^https?:\/\//i.test(correctedLink)) {
         correctedLink = `https://${correctedLink}`;
@@ -151,8 +161,8 @@ export function BeSpaceCard({
           <button 
             className="space-card-likes flex items-center gap-1 text-[#fdfbf7] text-xs py-1 px-2 rounded-full hover:bg-[#fdfbf7]/10 transition-colors"
             onClick={(e) => {
-              e.stopPropagation();
-              onLike?.();
+              e.stopPropagation(); // Prevent card click when liking
+              onLike?.(id); // Use the card id
             }}
           >
             <Heart className="w-3.5 h-3.5" />

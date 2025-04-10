@@ -104,14 +104,13 @@ export default function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <img 
-              src="/23-Beforest-Black-with-Tagline.png" 
-              alt="Beforest" 
-              className="h-10" 
+          <div className="flex flex-col items-center justify-center gap-2 mb-6">
+            <span className="text-2xl font-serif font-bold text-[#344736] tracking-tight">BeSpaces</span>
+            <img
+              src="/23-Beforest-Black-with-Tagline.png"
+              alt="Beforest"
+              className="h-10"
             />
-            <div className="h-8 w-px bg-[#e7e4df]/50"></div>
-            <span className="text-xl font-serif font-bold text-[#344736] tracking-tight">BeSpaces</span>
           </div>
           
           <p className="text-xs text-[#4b3c35] text-center mb-6">

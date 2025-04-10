@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { BeSpaceCard } from '@/components/SpaceCard';
 import { cn } from '@/lib/utils';
 import { useInView } from 'react-intersection-observer';
+import { VideoPlayerModal } from '@/components/VideoPlayerModal';
 
 // Define categories including 'All'
 const categories: Category[] = ['All', 'Tools', 'Videos', 'Documents', 'Knowledge'];
@@ -27,6 +28,8 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('All'); 
   const [searchTerm, setSearchTerm] = useState('');
   const [displayedItemsCount, setDisplayedItemsCount] = useState(ITEMS_PER_PAGE);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
 
   // === Refs & Observers ===
   const { ref, inView } = useInView({
@@ -41,29 +44,75 @@ export default function Home() {
   }, []);
 
   const handleAddSpace = async (
-    spaceData: Omit<CardType, 'id' | 'created_at' | 'likes' | 'creator_id' | 'creator_name'>
+    spaceData: Omit<CardType, 'id' | 'created_at' | 'likes' | 'creator_id' | 'creator_name'> & { videoFile?: FileList }
   ) => {
     if (!user || !supabase) return;
-    
-    try {
-      const { data: columnData } = await supabase
-        .from('cards')
-        .select('creator_name', { head: true, count: 'exact' });
-      
-      const hasCreatorNameField = !!columnData;
-      
-      const { error } = await supabase
-        .from('cards')
-        .insert({
-          ...spaceData,
-          creator_id: user.id,
-          ...(hasCreatorNameField ? { creator_name: user.name || user.email } : {})
-        });
 
-      if (error) throw error;
+    let finalLink = spaceData.link;
+
+    // --- Video Upload Logic --- 
+    if (spaceData.category === 'Videos') {
+      if (spaceData.videoFile && spaceData.videoFile.length > 0) {
+        const file = spaceData.videoFile[0];
+        // Sanitize filename and create unique path
+        const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.]+/g, '_');
+        const filePath = `${user.id}/${Date.now()}-${sanitizedFileName}`;
+        
+        try {
+          console.log(`Uploading video to: ${filePath}`);
+          const { data: uploadData, error } = await supabase.storage
+            .from('bespace-videos') // Correct bucket name
+            .upload(filePath, file);
+
+          if (error) throw error;
+
+          if (uploadData?.path) {
+            finalLink = uploadData.path; // Use the storage path
+            console.log(`Upload successful, path: ${finalLink}`);
+          } else {
+            throw new Error('Upload succeeded but no path returned.');
+          }
+        } catch (error) {
+          console.error('Error uploading video:', error);
+          // TODO: Show feedback to user about upload failure
+          return; // Stop if upload fails
+        }
+      } else {
+        // No file provided for video category
+        console.error('Video category selected but no file provided.');
+        // TODO: Show feedback to user
+        return; 
+      }
+    } 
+    // --- End Video Upload Logic ---
+
+    // --- Insert Card Data --- 
+    try {
+      const cardToInsert = {
+        title: spaceData.title,
+        description: spaceData.description,
+        link: finalLink, // Use storage path for videos, original link otherwise
+        category: spaceData.category,
+        tag: spaceData.tag,
+        creator_id: user.id,
+        creator_name: user.name || user.email, // Assuming creator_name column exists
+      };
       
+      console.log('Inserting card data:', cardToInsert);
+      const { error: insertError } = await supabase
+        .from('cards')
+        .insert(cardToInsert);
+
+      if (insertError) {
+        console.error('Error inserting card data:', insertError);
+        // TODO: Show feedback to user about insert failure
+      } else {
+        console.log('Card added successfully!');
+        // TODO: Optionally trigger modal close here if not handled by form
+      }
     } catch (error) {
-      console.error('Error adding space:', error);
+      console.error('Error in add space operation:', error);
+      // TODO: Show generic feedback to user
     }
   };
   
@@ -89,6 +138,36 @@ export default function Home() {
 
     } catch (error) {
       console.error('Error liking space:', error);
+    }
+  };
+
+  // New handler for card clicks (video or link)
+  const handleCardClick = (card: CardType) => {
+    if (card.category === 'Videos' && card.link && supabase) {
+      // Use the correct bucket name 'bespace-videos'
+      const { data } = supabase.storage.from('bespace-videos').getPublicUrl(card.link);
+      
+      if (data?.publicUrl) {
+        setCurrentVideoUrl(data.publicUrl);
+        setIsVideoModalOpen(true);
+      } else {
+        console.error('Could not get public URL for video:', card.link);
+        // Optionally open the raw link as a fallback or show an error
+        if (card.link) {
+          let correctedLink = card.link.trim();
+          if (!/^https?:\/\//i.test(correctedLink)) {
+            correctedLink = `https://${correctedLink}`;
+          }
+          window.open(correctedLink, '_blank');
+        }
+      }
+    } else if (card.link) {
+      // Default behavior: open link in new tab
+      let correctedLink = card.link.trim();
+      if (!/^https?:\/\//i.test(correctedLink)) {
+        correctedLink = `https://${correctedLink}`;
+      }
+      window.open(correctedLink, '_blank');
     }
   };
 
@@ -319,14 +398,9 @@ export default function Home() {
                 {featuredSpaces.map((card: CardType) => (
                   <BeSpaceCard
                     key={card.id}
-                    title={card.title}
-                    description={card.description}
-                    author={{ name: card.creator_name }}
-                    likes={card.likes}
-                    category={card.category}
-                    link={card.link}
-                    tag={card.tag}
+                    card={card}
                     onLike={() => handleLikeSpace(card.id)}
+                    onCardClick={handleCardClick}
                   />
                 ))}
               </div>
@@ -340,58 +414,71 @@ export default function Home() {
                 {searchTerm ? '🔍' : (selectedCategory === 'All' ? '🌿' : '📂')}
               </span> 
               {searchTerm 
-                ? `Search Results for "${searchTerm}"` 
+                ? `Search Results for "${searchTerm}"`
                 : (selectedCategory === 'All' ? 'All Resources' : `${selectedCategory} Resources`)}
             </h2>
-
-            {isLoading && displayedSpaces.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-8 h-8 border-4 border-[#e7e4df] border-t-[#344736] rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-[#51514d]">Loading Resources...</p>
-              </div>
-            ) : filteredSpaces.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-[#342e29] text-lg mb-2">No resources found.</p>
-                <p className="text-sm text-[#51514d]">
-                  {searchTerm 
-                    ? `Try adjusting your search term or category.`
-                    : `There are no resources in the "${selectedCategory}" category yet.`}
-                </p>
-              </div>
-            ) : (
-              <CardGrid
-                cards={displayedSpaces} 
-                onLike={handleLikeSpace}
-                isLoading={false} 
-              />
-            )}
-            
-            {!isLoading && filteredSpaces.length > displayedItemsCount && (
-              <div ref={ref} className="text-center py-8">
-                 <div className="w-8 h-8 border-4 border-[#e7e4df] border-t-[#344736] rounded-full animate-spin mx-auto"></div>
-              </div>
-            )}
-            
-            {!isLoading && filteredSpaces.length > 0 && filteredSpaces.length <= displayedItemsCount && displayedItemsCount > ITEMS_PER_PAGE && (
-              <div className="text-center py-8">
-                <p className="text-sm text-[#51514d]">You&apos;ve reached the end!</p>
-              </div>
-            )}
           </div>
+
+          {/* Restore Loading/Empty/Grid states */} 
+          {isLoading && displayedSpaces.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-8 h-8 border-4 border-[#e7e4df] border-t-[#344736] rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-[#51514d]">Loading Resources...</p>
+            </div>
+          ) : filteredSpaces.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-[#342e29] text-lg mb-2">No resources found.</p>
+              <p className="text-sm text-[#51514d]">
+                {searchTerm 
+                  ? `Try adjusting your search term or category.`
+                  : `There are no resources in the "${selectedCategory}" category yet.`}
+              </p>
+            </div>
+          ) : (
+            // Restore CardGrid usage
+            <CardGrid
+              cards={displayedSpaces} 
+              onLike={handleLikeSpace}
+              isLoading={false} 
+              onCardClick={handleCardClick}
+            />
+          )}
+          
+          {/* Restore Infinite Scroll loader/end message */} 
+          {!isLoading && filteredSpaces.length > displayedItemsCount && (
+            <div ref={ref} className="text-center py-8">
+               <div className="w-8 h-8 border-4 border-[#e7e4df] border-t-[#344736] rounded-full animate-spin mx-auto"></div>
+            </div>
+          )}
+          
+          {!isLoading && filteredSpaces.length > 0 && filteredSpaces.length <= displayedItemsCount && displayedItemsCount > ITEMS_PER_PAGE && (
+            <div className="text-center py-8">
+              <p className="text-sm text-[#51514d]">You&apos;ve reached the end!</p>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Restore Footer */} 
       <footer className="py-6 bg-[#e7e4df] border-t border-[#d1cec9] mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
           <p className="text-xs text-[#51514d]">© {new Date().getFullYear()} Beforest. All rights reserved.</p>
         </div>
       </footer>
 
+      {/* Restore AddCardModal */}
       <AddCardModal
-        isOpen={false}
-        onClose={() => {}}
+        isOpen={false} // This should ideally be controlled by state
+        onClose={() => {}} // Need a state setter here, e.g., setIsAddModalOpen(false)
         onSubmit={handleAddSpace} 
-        isLoading={false}
+        isLoading={false} // Should be linked to an isAdding state
+      />
+
+      {/* Restore VideoPlayerModal */}
+      <VideoPlayerModal 
+        isOpen={isVideoModalOpen} 
+        onClose={() => setIsVideoModalOpen(false)} 
+        videoUrl={currentVideoUrl} 
       />
     </div>
   );

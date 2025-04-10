@@ -19,4 +19,5 @@ export interface Card {
   created_at: string;
   likes: number;
   featured?: boolean;
+  creator_avatar?: string;
 } 

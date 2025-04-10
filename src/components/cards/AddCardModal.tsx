@@ -1,11 +1,12 @@
 import { Card, Category } from '@/types';
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
 
 interface AddCardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<Card, 'id' | 'created_at' | 'likes' | 'creator_id' | 'creator_name'>) => void;
+  onSubmit: (data: Omit<Card, 'id' | 'created_at' | 'likes' | 'creator_id' | 'creator_name'> & { videoFile?: FileList }) => void;
   isLoading?: boolean;
 }
 
@@ -15,27 +16,37 @@ type FormValues = {
   link: string;
   category: Category;
   tag: string;
+  videoFile?: FileList;
 };
 
 export function AddCardModal({ isOpen, onClose, onSubmit, isLoading = false }: AddCardModalProps) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<FormValues>({
     defaultValues: {
       title: '',
       description: '',
       link: '',
       category: 'Tools',
       tag: '',
+      videoFile: undefined,
     }
   });
   
-  // For live preview
-  const watchValues = watch();
-  
+  const watchedCategory = watch('category');
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      reset();
+    }
+  }, [isOpen, reset]);
+
   const handleFormSubmit = (data: FormValues) => {
-    // Ensure tag is never undefined to match the expected type
     onSubmit({
-      ...data,
+      title: data.title,
+      description: data.description,
+      link: data.link,
+      category: data.category,
       tag: data.tag || '',
+      videoFile: data.category === 'Videos' ? data.videoFile : undefined,
     });
   };
 
@@ -84,21 +95,48 @@ export function AddCardModal({ isOpen, onClose, onSubmit, isLoading = false }: A
                         {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
                       </div>
                       
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Link</label>
-                        <input
-                          {...register('link', { 
-                            required: 'Link is required',
-                            pattern: {
-                              value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
-                              message: 'Please enter a valid URL'
-                            }
-                          })}
-                          className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none"
-                          placeholder="https://example.com"
-                        />
-                        {errors.link && <p className="text-destructive text-sm mt-1">{errors.link.message}</p>}
-                      </div>
+                      {watchedCategory !== 'Videos' ? (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Link</label>
+                          <input
+                            {...register('link', { 
+                              required: watchedCategory !== 'Videos' ? 'Link is required' : false,
+                              pattern: {
+                                value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
+                                message: 'Please enter a valid URL'
+                              }
+                            })}
+                            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none"
+                            placeholder="https://example.com"
+                          />
+                          {errors.link && <p className="text-destructive text-sm mt-1">{errors.link.message}</p>}
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Video File</label>
+                          <input
+                            type="file"
+                            {...register('videoFile', {
+                              required: watchedCategory === 'Videos' ? 'Video file is required' : false,
+                              validate: (files) => {
+                                if (watchedCategory !== 'Videos') return true;
+                                if (!files || files.length === 0) return 'Video file is required';
+                                const file = files[0];
+                                if (file.size > 100 * 1024 * 1024) {
+                                  return 'File size should not exceed 100MB';
+                                }
+                                if (!file.type.startsWith('video/')) {
+                                  return 'Please select a valid video file';
+                                }
+                                return true;
+                              }
+                            })}
+                            accept="video/*"
+                            className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                          />
+                          {errors.videoFile && <p className="text-destructive text-sm mt-1">{errors.videoFile.message as string}</p>}
+                        </div>
+                      )}
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -148,35 +186,34 @@ export function AddCardModal({ isOpen, onClose, onSubmit, isLoading = false }: A
                     </form>
                   </div>
                   
-                  {/* Live preview */}
                   <div className="bg-muted/30 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-muted-foreground mb-2">Preview</h4>
                     
                     <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-3">
-                          <h3 className="text-lg font-bold">{watchValues.title || 'Resource Title'}</h3>
+                          <h3 className="text-lg font-bold">{watch('title') || 'Resource Title'}</h3>
                           <div className="flex items-center">
                             <span className={`text-xs px-2 py-1 rounded-full text-white ${
-                              watchValues.category === 'Videos' ? 'bg-[#86312b]' : 
-                              watchValues.category === 'Documents' ? 'bg-[#342e29]' : 
-                              watchValues.category === 'Knowledge' ? 'bg-[#002140]' : 
+                              watchedCategory === 'Videos' ? 'bg-[#86312b]' : 
+                              watchedCategory === 'Documents' ? 'bg-[#342e29]' : 
+                              watchedCategory === 'Knowledge' ? 'bg-[#002140]' : 
                               'bg-[#344736]'
                             }`}>
-                              {watchValues.category || 'Category'}
+                              {watchedCategory || 'Category'}
                             </span>
                           </div>
                         </div>
                         
                         <p className="text-muted-foreground mb-4 text-sm">
-                          {watchValues.description || 'Resource description will appear here'}
+                          {watch('description') || 'Resource description will appear here'}
                         </p>
                         
                         <div className="flex justify-between items-center text-xs text-muted-foreground">
                           <div>Added by Beforest Team</div>
-                          {watchValues.tag && (
+                          {watch('tag') && (
                             <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                              {watchValues.tag}
+                              {watch('tag')}
                             </span>
                           )}
                         </div>

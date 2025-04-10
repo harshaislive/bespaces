@@ -5,9 +5,10 @@ interface CardGridProps {
   cards: Card[];
   onLike: (id: string) => void;
   isLoading?: boolean;
+  onCardClick?: (card: Card) => void;
 }
 
-export function CardGrid({ cards, onLike, isLoading = false }: CardGridProps) {
+export function CardGrid({ cards, onLike, isLoading = false, onCardClick }: CardGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -35,6 +36,8 @@ export function CardGrid({ cards, onLike, isLoading = false }: CardGridProps) {
           link={card.link}
           tag={card.tag}
           onLike={() => onLike(card.id)}
+          card={card}
+          onCardClick={onCardClick}
         />
       ))}
     </div>

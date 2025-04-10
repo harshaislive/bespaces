@@ -32,13 +32,13 @@ export function Header({ user }: HeaderProps) {
         </div>
       </div>
       
-      <div className="max-w-7xl mx-auto flex items-center justify-between py-3 px-4">
-        <div className="flex items-center gap-4">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-4 py-4 px-4">
+        <div className="flex items-center justify-center gap-4">
           <Link href="/" className="flex items-center">
             <img 
               src="/23-Beforest-Black-with-Tagline.png" 
               alt="Beforest" 
-              className="h-12" 
+              className="h-10 sm:h-12"
             />
             {/* TODO: Replace with Next.js Image component for better performance */}
           </Link>
@@ -48,16 +48,16 @@ export function Header({ user }: HeaderProps) {
           </Link>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center gap-4">
           <Link 
             href="/why" 
-            className="text-sm text-[#344736] hover:text-[#415c43] transition-colors mr-4"
+            className="hidden sm:block text-sm text-[#344736] hover:text-[#415c43] transition-colors mr-4"
           >
             Why BeSpaces?
           </Link>
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-[#51514d]">{user.email}</span>
+              <span className="hidden sm:inline text-xs text-[#51514d]">{user.email}</span>
               <button 
                 onClick={handleLogout}
                 className="text-xs bg-[#f9f7f3] px-3 py-1.5 rounded-md border border-[#e7e4df] text-[#86312b] hover:bg-[#f5f2ec] transition-colors"
